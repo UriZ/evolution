@@ -18,16 +18,25 @@ Genetic algorithm demonstrating natural selection through visual organisms.
 
 ## What You'll See
 
-- 100 organisms displayed as colored circles
-- Colors and sizes evolve toward target (reddish, size ~35)
+- 100 organisms with colored bodies and tentacles
+- Evolution toward target: blue, fast, 8 long tentacles
 - Fitness stats shown in top-left
 - ~5 generations per second
+
+## Current Traits (7 genes)
+
+- Body size (10-40 pixels)
+- Body color (RGB)
+- Tentacle count (0-8)
+- Tentacle length (5-30 pixels)
+- Speed (0-10 units/step)
 
 ## Implementation Status
 
 - ✅ Phase 1: Genetics engine (DNA, crossover, mutation, selection)
 - ✅ Phase 2: Simple visualization (colored circles, grid layout)
-- ⬜ Phase 3: Complex features (shapes, tentacles)
+- ✅ Phase 3: Tentacles (count, length - partial)
+- ⬜ Phase 3 remaining: Shapes
 - ⬜ Phase 4: Movement/animation
 - ⬜ Phase 5: Interactivity
 
