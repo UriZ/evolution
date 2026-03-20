@@ -1,10 +1,17 @@
+import random
+import math
+
 class Organism:
-    def __init__(self, dna):
+    def __init__(self, dna, x=0, y=0):
         self.dna = dna
+        self.x = x
+        self.y = y
         self.fitness = 0
+        self.kills = 0
+        self.alive = True
 
     def decode_traits(self):
-        """Convert DNA to visual traits"""
+        """Convert DNA to traits"""
         return {
             'size': 10 + self.dna[0] * 30,  # 10-40 pixels
             'r': int(self.dna[1] * 255),
@@ -12,19 +19,42 @@ class Organism:
             'b': int(self.dna[3] * 255),
             'tentacle_count': int(self.dna[4] * 8),  # 0-8 tentacles
             'tentacle_length': 5 + self.dna[5] * 25,  # 5-30 pixels
-            'speed': self.dna[6] * 10,  # 0-10 units/step
+            'speed': self.dna[6] * 3,  # 0-3 pixels/step
+            'vision': 20 + self.dna[7] * 180,  # 20-200 pixel range
+            'aggression': self.dna[8],  # 0-1 (attack probability)
+            'power': 10 + self.dna[9] * 40,  # 10-50 attack power
         }
 
-    def evaluate_fitness(self, target):
-        """Fitness = how close to target traits
-        target: dict with any combination of trait keys
-        """
+    def distance_to(self, other):
+        """Calculate distance to another organism"""
+        return math.sqrt((self.x - other.x)**2 + (self.y - other.y)**2)
+
+    def move_toward(self, target_x, target_y, speed):
+        """Move toward target position"""
+        dx = target_x - self.x
+        dy = target_y - self.y
+        dist = math.sqrt(dx*dx + dy*dy)
+        if dist > 0:
+            self.x += (dx / dist) * speed
+            self.y += (dy / dist) * speed
+
+    def can_see(self, other):
+        """Check if this organism can see another"""
         traits = self.decode_traits()
-        diff = 0
+        return self.distance_to(other) <= traits['vision']
 
-        for key in target:
-            diff += abs(traits[key] - target[key])
+    def attack(self, other):
+        """Attempt to eat another organism"""
+        my_traits = self.decode_traits()
+        other_traits = other.decode_traits()
 
-        # Lower difference = higher fitness
-        self.fitness = 2000 - diff
-        return self.fitness
+        # Can only eat smaller organisms
+        if my_traits['size'] <= other_traits['size']:
+            return False
+
+        # Attack succeeds if power > their size
+        if my_traits['power'] > other_traits['size']:
+            other.alive = False
+            self.kills += 1
+            return True
+        return False

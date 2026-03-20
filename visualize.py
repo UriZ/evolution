@@ -7,24 +7,25 @@ from population import Population
 
 # Config
 WIDTH, HEIGHT = 800, 600
-GRID_COLS = 10
-GRID_ROWS = 10
-TARGET = {
-    'r': 50, 'g': 100, 'b': 255,  # Blue
-    'tentacle_count': 8,  # Many tentacles
-    'tentacle_length': 25,  # Long tentacles
-    'speed': 7,  # Fast
-}
+STEPS_PER_GEN = 200  # Simulation steps before next generation
 
 def fitness_fn(organism):
-    organism.evaluate_fitness(TARGET)
+    """Fitness = survival and kills"""
+    if not organism.alive:
+        organism.fitness = 0
+    else:
+        organism.fitness = 100 + organism.kills * 50
 
-def draw_organism(screen, org, x, y):
-    """Draw organism as circle with tentacles"""
+def draw_organism(screen, org):
+    """Draw organism at its position with tentacles"""
     import math
+    if not org.alive:
+        return
+
     traits = org.decode_traits()
     color = (traits['r'], traits['g'], traits['b'])
     radius = int(traits['size'] / 2)
+    x, y = int(org.x), int(org.y)
 
     # Draw tentacles
     count = traits['tentacle_count']
@@ -41,21 +42,14 @@ def draw_organism(screen, org, x, y):
     pygame.draw.circle(screen, color, (x, y), radius)
 
 def draw_population(screen, pop):
-    """Draw all organisms in grid layout"""
-    cell_w = WIDTH // GRID_COLS
-    cell_h = HEIGHT // GRID_ROWS
+    """Draw all organisms at their positions"""
+    for org in pop.organisms:
+        draw_organism(screen, org)
 
-    for i, org in enumerate(pop.organisms[:GRID_COLS * GRID_ROWS]):
-        row = i // GRID_COLS
-        col = i % GRID_COLS
-        x = col * cell_w + cell_w // 2
-        y = row * cell_h + cell_h // 2
-        draw_organism(screen, org, x, y)
-
-def draw_stats(screen, font, stats):
+def draw_stats(screen, font, stats, step):
     """Draw generation stats"""
     text = font.render(
-        f"Gen: {stats['generation']} | Avg: {stats['avg_fitness']:.1f} | Max: {stats['max_fitness']:.1f}",
+        f"Gen: {stats['generation']} | Alive: {stats['alive']} | Step: {step} | Kills: {stats['max_kills']}",
         True, (255, 255, 255)
     )
     pygame.draw.rect(screen, (0, 0, 0), (0, 0, text.get_width() + 10, text.get_height() + 10))
@@ -64,13 +58,14 @@ def draw_stats(screen, font, stats):
 def main():
     pygame.init()
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
-    pygame.display.set_caption("Evolution Simulator")
+    pygame.display.set_caption("Evolution Simulator - Predator/Prey")
     font = pygame.font.Font(None, 24)
     clock = pygame.time.Clock()
 
-    pop = Population(size=100, dna_length=7)
+    pop = Population(size=50, dna_length=10, world_w=WIDTH, world_h=HEIGHT)
     running = True
     paused = False
+    step = 0
 
     while running:
         for event in pygame.event.get():
@@ -81,16 +76,22 @@ def main():
                     paused = not paused
 
         if not paused:
-            pop.evaluate(fitness_fn)
+            pop.simulate_step()
+            step += 1
+
+            # Evolve after simulation period
+            if step >= STEPS_PER_GEN:
+                pop.evaluate(fitness_fn)
+                pop.evolve(mutation_rate=0.1)
+                step = 0
 
         screen.fill((40, 40, 40))
         draw_population(screen, pop)
-        draw_stats(screen, font, pop.stats())
+        draw_stats(screen, font, pop.stats(), step)
         pygame.display.flip()
 
         if not paused:
-            pop.evolve(mutation_rate=0.1)
-            clock.tick(5)  # 5 generations per second
+            clock.tick(30)  # 30 FPS
 
     pygame.quit()
     sys.exit()
