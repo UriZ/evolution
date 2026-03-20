@@ -1,5 +1,6 @@
 import random
 import math
+from traits import decode_traits as decode_traits_fn
 
 class Organism:
     def __init__(self, dna, x=0, y=0):
@@ -12,22 +13,8 @@ class Organism:
         self.animation_time = random.random() * 100  # For tentacle movement
 
     def decode_traits(self):
-        """Convert DNA to traits"""
-        return {
-            'size': 10 + self.dna[0] * 30,  # 10-40 pixels
-            'r': int(self.dna[1] * 255),
-            'g': int(self.dna[2] * 255),
-            'b': int(self.dna[3] * 255),
-            'tentacle_count': int(self.dna[4] * 16),  # 0-16 tentacles
-            'tentacle_length': 5 + self.dna[5] * 35,  # 5-40 pixels
-            'speed': self.dna[6] * 3,  # 0-3 pixels/step
-            'vision': 20 + self.dna[7] * 180,  # 20-200 pixel range
-            'aggression': self.dna[8],  # 0-1 (attack probability)
-            'power': 10 + self.dna[9] * 40,  # 10-50 attack power
-            'eye_count': int(self.dna[10] * 8) + 1,  # 1-8 eyes
-            'eye_size': 2 + self.dna[11] * 8,  # 2-10 pixel radius
-            'tentacle_joints': int(self.dna[12] * 6) + 2,  # 2-7 joints
-        }
+        """Convert DNA to traits using trait system"""
+        return decode_traits_fn(self.dna)
 
     def distance_to(self, other):
         """Calculate distance to another organism"""
@@ -56,16 +43,8 @@ class Organism:
         if my_traits['size'] <= other_traits['size']:
             return False
 
-        # Calculate attack power: base power + tentacle weapon bonus
-        tentacle_weapon = (
-            my_traits['tentacle_count'] *
-            my_traits['tentacle_length'] *
-            my_traits['tentacle_joints'] * 0.1
-        )
-        total_power = my_traits['power'] + tentacle_weapon
-
-        # Attack succeeds if total power > their size
-        if total_power > other_traits['size']:
+        # Attack succeeds if power > their size (power is composed trait)
+        if my_traits['power'] > other_traits['size']:
             other.alive = False
             self.kills += 1
             return True

@@ -1,11 +1,13 @@
 import random
 from genetics import random_dna, reproduce
 from organism import Organism
+from traits import get_dna_length, generate_random_trait, add_composed_trait, get_all_trait_names
 
 class Population:
-    def __init__(self, size=100, dna_length=10, world_w=800, world_h=600):
+    def __init__(self, size=100, world_w=800, world_h=600):
         self.world_w = world_w
         self.world_h = world_h
+        dna_length = get_dna_length()
         self.organisms = [
             Organism(random_dna(dna_length),
                      random.randint(0, world_w),
@@ -14,6 +16,8 @@ class Population:
         ]
         self.generation = 0
         self.initial_size = size
+        self.fitness_history = []
+        self.last_trait_gen = 0
 
     def simulate_step(self):
         """One step of movement and predator-prey interactions"""
@@ -60,9 +64,43 @@ class Population:
         tournament = random.sample(alive, 3)
         return max(tournament, key=lambda o: o.fitness)
 
-    def evolve(self, mutation_rate=0.1):
+    def is_fitness_plateau(self, window=10, threshold=5):
+        """Check if fitness has plateaued"""
+        if len(self.fitness_history) < window:
+            return False
+
+        recent = self.fitness_history[-window:]
+        max_recent = max(recent)
+        min_recent = min(recent)
+        return (max_recent - min_recent) < threshold
+
+    def try_generate_trait(self):
+        """Try to generate a new random trait"""
+        result = generate_random_trait(get_all_trait_names())
+        if result:
+            name, calc_fn = result
+            add_composed_trait(name, calc_fn)
+            return name
+        return None
+
+    def evolve(self, mutation_rate=0.1, trait_gen_interval=20):
         """Create next generation from survivors"""
+        # Track fitness
+        alive = [o for o in self.organisms if o.alive]
+        if alive:
+            max_fitness = max(o.fitness for o in alive)
+            self.fitness_history.append(max_fitness)
+
+        # Generate new trait if plateau or interval reached
+        gens_since_trait = self.generation - self.last_trait_gen
+        if gens_since_trait >= trait_gen_interval or self.is_fitness_plateau():
+            new_trait = self.try_generate_trait()
+            if new_trait:
+                self.last_trait_gen = self.generation
+
+        # Create new generation
         new_organisms = []
+        dna_length = get_dna_length()
         for _ in range(self.initial_size):
             parent1 = self.select_parent()
             parent2 = self.select_parent()
@@ -85,6 +123,7 @@ class Population:
                 'alive': 0,
                 'avg_kills': 0,
                 'max_kills': 0,
+                'trait_count': len(get_all_trait_names()),
             }
 
         kills = [o.kills for o in alive]
@@ -93,4 +132,5 @@ class Population:
             'alive': len(alive),
             'avg_kills': sum(kills) / len(kills),
             'max_kills': max(kills),
+            'trait_count': len(get_all_trait_names()),
         }

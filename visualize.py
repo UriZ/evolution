@@ -77,7 +77,7 @@ def draw_population(screen, pop):
 def draw_stats(screen, font, stats, step):
     """Draw generation stats"""
     text = font.render(
-        f"Gen: {stats['generation']} | Alive: {stats['alive']} | Step: {step} | Kills: {stats['max_kills']}",
+        f"Gen: {stats['generation']} | Alive: {stats['alive']} | Step: {step} | Kills: {stats['max_kills']} | Traits: {stats.get('trait_count', 0)}",
         True, (255, 255, 255)
     )
     pygame.draw.rect(screen, (0, 0, 0), (0, 0, text.get_width() + 10, text.get_height() + 10))
@@ -90,7 +90,7 @@ def main():
     font = pygame.font.Font(None, 24)
     clock = pygame.time.Clock()
 
-    pop = Population(size=50, dna_length=13, world_w=WIDTH, world_h=HEIGHT)
+    pop = Population(size=50, world_w=WIDTH, world_h=HEIGHT)
     running = True
     paused = False
     step = 0
