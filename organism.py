@@ -9,6 +9,7 @@ class Organism:
         self.fitness = 0
         self.kills = 0
         self.alive = True
+        self.animation_time = random.random() * 100  # For tentacle movement
 
     def decode_traits(self):
         """Convert DNA to traits"""
@@ -25,7 +26,7 @@ class Organism:
             'power': 10 + self.dna[9] * 40,  # 10-50 attack power
             'eye_count': int(self.dna[10] * 8) + 1,  # 1-8 eyes
             'eye_size': 2 + self.dna[11] * 8,  # 2-10 pixel radius
-            'tentacle_joints': int(self.dna[12] * 3) + 1,  # 1-3 joints
+            'tentacle_joints': int(self.dna[12] * 6) + 2,  # 2-7 joints
         }
 
     def distance_to(self, other):
@@ -55,8 +56,16 @@ class Organism:
         if my_traits['size'] <= other_traits['size']:
             return False
 
-        # Attack succeeds if power > their size
-        if my_traits['power'] > other_traits['size']:
+        # Calculate attack power: base power + tentacle weapon bonus
+        tentacle_weapon = (
+            my_traits['tentacle_count'] *
+            my_traits['tentacle_length'] *
+            my_traits['tentacle_joints'] * 0.1
+        )
+        total_power = my_traits['power'] + tentacle_weapon
+
+        # Attack succeeds if total power > their size
+        if total_power > other_traits['size']:
             other.alive = False
             self.kills += 1
             return True

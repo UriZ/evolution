@@ -27,7 +27,7 @@ def draw_organism(screen, org):
     radius = int(traits['size'] / 2)
     x, y = int(org.x), int(org.y)
 
-    # Draw jointed tentacles
+    # Draw jointed tentacles with animated movement
     count = traits['tentacle_count']
     length = traits['tentacle_length']
     joints = traits['tentacle_joints']
@@ -36,16 +36,19 @@ def draw_organism(screen, org):
         segment_length = length / joints
         for i in range(count):
             base_angle = i * angle_step
-            # Draw each segment with slight angle variation
             curr_x, curr_y = x, y
+            cumulative_angle = base_angle
+
             for j in range(joints):
-                # Add slight wobble to each joint based on position
-                angle_offset = math.sin(org.x * 0.01 + org.y * 0.01 + i + j) * 0.3
-                angle = base_angle + angle_offset
-                next_x = curr_x + int(math.cos(angle) * segment_length)
-                next_y = curr_y + int(math.sin(angle) * segment_length)
-                thickness = max(1, 3 - j)  # Thinner toward tip
-                pygame.draw.line(screen, color, (int(curr_x), int(curr_y)), (next_x, next_y), thickness)
+                # Animated wave motion - each joint contributes to the wave
+                wave = math.sin(org.animation_time * 0.1 + i * 0.5 + j * 0.7) * 0.5
+                bend = math.cos(org.animation_time * 0.08 + i) * 0.3
+                cumulative_angle += wave + bend
+
+                next_x = curr_x + math.cos(cumulative_angle) * segment_length
+                next_y = curr_y + math.sin(cumulative_angle) * segment_length
+                thickness = max(1, 4 - j // 2)  # Gradual taper
+                pygame.draw.line(screen, color, (int(curr_x), int(curr_y)), (int(next_x), int(next_y)), thickness)
                 curr_x, curr_y = next_x, next_y
 
     # Draw body
@@ -103,6 +106,10 @@ def main():
         if not paused:
             pop.simulate_step()
             step += 1
+
+            # Animate tentacles
+            for org in pop.organisms:
+                org.animation_time += 1
 
             # Evolve after simulation period
             if step >= STEPS_PER_GEN:
