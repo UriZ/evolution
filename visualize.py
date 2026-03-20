@@ -9,16 +9,35 @@ from population import Population
 WIDTH, HEIGHT = 800, 600
 GRID_COLS = 10
 GRID_ROWS = 10
-TARGET = {'size': 35, 'r': 255, 'g': 50, 'b': 50}
+TARGET = {
+    'r': 50, 'g': 100, 'b': 255,  # Blue
+    'tentacle_count': 8,  # Many tentacles
+    'tentacle_length': 25,  # Long tentacles
+    'speed': 7,  # Fast
+}
 
 def fitness_fn(organism):
     organism.evaluate_fitness(TARGET)
 
 def draw_organism(screen, org, x, y):
-    """Draw organism as circle"""
+    """Draw organism as circle with tentacles"""
+    import math
     traits = org.decode_traits()
     color = (traits['r'], traits['g'], traits['b'])
     radius = int(traits['size'] / 2)
+
+    # Draw tentacles
+    count = traits['tentacle_count']
+    length = traits['tentacle_length']
+    if count > 0:
+        angle_step = 2 * math.pi / count
+        for i in range(count):
+            angle = i * angle_step
+            end_x = x + int(math.cos(angle) * (radius + length))
+            end_y = y + int(math.sin(angle) * (radius + length))
+            pygame.draw.line(screen, color, (x, y), (end_x, end_y), 2)
+
+    # Draw body
     pygame.draw.circle(screen, color, (x, y), radius)
 
 def draw_population(screen, pop):
@@ -49,7 +68,7 @@ def main():
     font = pygame.font.Font(None, 24)
     clock = pygame.time.Clock()
 
-    pop = Population(size=100, dna_length=4)
+    pop = Population(size=100, dna_length=7)
     running = True
     paused = False
 
