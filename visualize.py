@@ -17,7 +17,7 @@ def fitness_fn(organism):
         organism.fitness = 100 + organism.kills * 50
 
 def draw_organism(screen, org):
-    """Draw organism at its position with tentacles"""
+    """Draw organism with jointed tentacles and eyes"""
     import math
     if not org.alive:
         return
@@ -27,19 +27,44 @@ def draw_organism(screen, org):
     radius = int(traits['size'] / 2)
     x, y = int(org.x), int(org.y)
 
-    # Draw tentacles
+    # Draw jointed tentacles
     count = traits['tentacle_count']
     length = traits['tentacle_length']
+    joints = traits['tentacle_joints']
     if count > 0:
         angle_step = 2 * math.pi / count
+        segment_length = length / joints
         for i in range(count):
-            angle = i * angle_step
-            end_x = x + int(math.cos(angle) * (radius + length))
-            end_y = y + int(math.sin(angle) * (radius + length))
-            pygame.draw.line(screen, color, (x, y), (end_x, end_y), 2)
+            base_angle = i * angle_step
+            # Draw each segment with slight angle variation
+            curr_x, curr_y = x, y
+            for j in range(joints):
+                # Add slight wobble to each joint based on position
+                angle_offset = math.sin(org.x * 0.01 + org.y * 0.01 + i + j) * 0.3
+                angle = base_angle + angle_offset
+                next_x = curr_x + int(math.cos(angle) * segment_length)
+                next_y = curr_y + int(math.sin(angle) * segment_length)
+                thickness = max(1, 3 - j)  # Thinner toward tip
+                pygame.draw.line(screen, color, (int(curr_x), int(curr_y)), (next_x, next_y), thickness)
+                curr_x, curr_y = next_x, next_y
 
     # Draw body
     pygame.draw.circle(screen, color, (x, y), radius)
+
+    # Draw eyes
+    eye_count = traits['eye_count']
+    eye_size = int(traits['eye_size'])
+    if eye_count > 0:
+        eye_angle_step = 2 * math.pi / eye_count
+        eye_distance = radius * 0.6
+        for i in range(eye_count):
+            angle = i * eye_angle_step
+            eye_x = x + int(math.cos(angle) * eye_distance)
+            eye_y = y + int(math.sin(angle) * eye_distance)
+            # White outer eye
+            pygame.draw.circle(screen, (255, 255, 255), (eye_x, eye_y), eye_size)
+            # Black pupil
+            pygame.draw.circle(screen, (0, 0, 0), (eye_x, eye_y), max(1, eye_size // 2))
 
 def draw_population(screen, pop):
     """Draw all organisms at their positions"""
@@ -62,7 +87,7 @@ def main():
     font = pygame.font.Font(None, 24)
     clock = pygame.time.Clock()
 
-    pop = Population(size=50, dna_length=10, world_w=WIDTH, world_h=HEIGHT)
+    pop = Population(size=50, dna_length=13, world_w=WIDTH, world_h=HEIGHT)
     running = True
     paused = False
     step = 0

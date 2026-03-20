@@ -17,12 +17,15 @@ class Organism:
             'r': int(self.dna[1] * 255),
             'g': int(self.dna[2] * 255),
             'b': int(self.dna[3] * 255),
-            'tentacle_count': int(self.dna[4] * 8),  # 0-8 tentacles
-            'tentacle_length': 5 + self.dna[5] * 25,  # 5-30 pixels
+            'tentacle_count': int(self.dna[4] * 16),  # 0-16 tentacles
+            'tentacle_length': 5 + self.dna[5] * 35,  # 5-40 pixels
             'speed': self.dna[6] * 3,  # 0-3 pixels/step
             'vision': 20 + self.dna[7] * 180,  # 20-200 pixel range
             'aggression': self.dna[8],  # 0-1 (attack probability)
             'power': 10 + self.dna[9] * 40,  # 10-50 attack power
+            'eye_count': int(self.dna[10] * 8) + 1,  # 1-8 eyes
+            'eye_size': 2 + self.dna[11] * 8,  # 2-10 pixel radius
+            'tentacle_joints': int(self.dna[12] * 3) + 1,  # 1-3 joints
         }
 
     def distance_to(self, other):
