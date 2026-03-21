@@ -15,6 +15,10 @@ ATOMIC_TRAITS = {
     'tentacle_count': (5, lambda g: int(g * 16)),
     'tentacle_length': (6, lambda g: 5 + g * 35),
     'tentacle_joints': (7, lambda g: int(g * 6) + 2),
+    'tentacle_color_r': (20, lambda g: int(g * 255)),
+    'tentacle_color_g': (21, lambda g: int(g * 255)),
+    'tentacle_color_b': (22, lambda g: int(g * 255)),
+    'tentacle_thickness': (23, lambda g: 1 + g * 5),  # 1-6 pixels
 
     # Movement & Senses
     'speed': (8, lambda g: g * 5),  # 0-5 pixels/step
@@ -25,14 +29,24 @@ ATOMIC_TRAITS = {
     # Eyes
     'eye_count': (12, lambda g: int(g * 8) + 1),
     'eye_size': (13, lambda g: 2 + g * 8),
+    'eye_color_r': (24, lambda g: int(g * 255)),
+    'eye_color_g': (25, lambda g: int(g * 255)),
+    'eye_color_b': (26, lambda g: int(g * 255)),
 
     # Special abilities
     'camouflage': (14, lambda g: g),  # 0-1: ability to match background
     'laser_power': (15, lambda g: g * 50),  # 0-50: ranged attack damage
     'flash_rate': (16, lambda g: g * 10),  # 0-10: color flashing speed
     'tongue_length': (17, lambda g: g * 40),  # 0-40: lashing tongue reach
+    'tongue_color_r': (27, lambda g: int(g * 255)),
+    'tongue_color_g': (28, lambda g: int(g * 255)),
+    'tongue_color_b': (29, lambda g: int(g * 255)),
     'fire_power': (18, lambda g: g * 30),  # 0-30: fire breath damage
+    'fire_hue': (30, lambda g: g),  # 0-1: 0=red/orange, 0.5=yellow, 1=blue fire
     'telekinesis': (19, lambda g: g * 100),  # 0-100: force projection range
+    'aura_color_r': (31, lambda g: int(g * 255)),
+    'aura_color_g': (32, lambda g: int(g * 255)),
+    'aura_color_b': (33, lambda g: int(g * 255)),
 }
 
 # Composed traits - calculated from other traits
