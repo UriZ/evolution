@@ -26,21 +26,25 @@ class Population:
         for org in alive:
             traits = org.decode_traits()
 
-            # Find nearest prey (smaller organisms in vision range)
-            prey_in_range = [
+            # Find potential targets in vision range
+            # Stealth reduces detection chance
+            targets_in_range = [
                 other for other in alive
                 if other != org and other.alive
                 and org.can_see(other)
-                and traits['size'] > other.decode_traits()['size']
+                and random.random() > other.decode_traits().get('stealth', 0) * 0.5
             ]
 
-            if prey_in_range and random.random() < traits['aggression']:
-                # Chase nearest prey
-                nearest = min(prey_in_range, key=lambda p: org.distance_to(p))
-                org.move_toward(nearest.x, nearest.y, traits['speed'])
+            if targets_in_range and random.random() < traits['aggression']:
+                # Target nearest organism
+                nearest = min(targets_in_range, key=lambda p: org.distance_to(p))
 
-                # Try to attack if close enough
-                if org.distance_to(nearest) < traits['size']:
+                # Try ranged attack first
+                if org.can_attack_ranged(nearest):
+                    org.attack(nearest)
+                else:
+                    # Chase for melee
+                    org.move_toward(nearest.x, nearest.y, traits['speed'])
                     org.attack(nearest)
             else:
                 # Random movement
@@ -64,7 +68,7 @@ class Population:
         tournament = random.sample(alive, 3)
         return max(tournament, key=lambda o: o.fitness)
 
-    def is_fitness_plateau(self, window=10, threshold=5):
+    def is_fitness_plateau(self, window=10, threshold=20):
         """Check if fitness has plateaued"""
         if len(self.fitness_history) < window:
             return False
@@ -72,7 +76,8 @@ class Population:
         recent = self.fitness_history[-window:]
         max_recent = max(recent)
         min_recent = min(recent)
-        return (max_recent - min_recent) < threshold
+        plateau = (max_recent - min_recent) < threshold
+        return plateau
 
     def try_generate_trait(self):
         """Try to generate a new random trait"""
@@ -85,17 +90,23 @@ class Population:
 
     def evolve(self, mutation_rate=0.1, trait_gen_interval=20):
         """Create next generation from survivors"""
-        # Track fitness
+        # Track fitness BEFORE checking plateau
         alive = [o for o in self.organisms if o.alive]
         if alive:
             max_fitness = max(o.fitness for o in alive)
             self.fitness_history.append(max_fitness)
+        else:
+            self.fitness_history.append(0)
 
         # Generate new trait if plateau or interval reached
         gens_since_trait = self.generation - self.last_trait_gen
-        if gens_since_trait >= trait_gen_interval or self.is_fitness_plateau():
+        is_plateau = self.is_fitness_plateau()
+
+        if gens_since_trait >= trait_gen_interval or is_plateau:
             new_trait = self.try_generate_trait()
             if new_trait:
+                with open('traits.log', 'a') as f:
+                    f.write(f"Gen {self.generation}: New trait: {new_trait} (plateau={is_plateau}, gens_since={gens_since_trait})\n")
                 self.last_trait_gen = self.generation
 
         # Create new generation

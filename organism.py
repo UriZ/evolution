@@ -34,18 +34,46 @@ class Organism:
         traits = self.decode_traits()
         return self.distance_to(other) <= traits['vision']
 
+    def can_attack_ranged(self, other):
+        """Check if organism can attack at range"""
+        my_traits = self.decode_traits()
+        dist = self.distance_to(other)
+
+        # Check ranged abilities
+        max_range = max(
+            my_traits['laser_power'] * 2,
+            my_traits['fire_power'],
+            my_traits['telekinesis']
+        )
+
+        return dist <= max_range and my_traits['ranged_power'] > 10
+
     def attack(self, other):
-        """Attempt to eat another organism"""
+        """Attempt to eat another organism (melee or ranged)"""
         my_traits = self.decode_traits()
         other_traits = other.decode_traits()
 
-        # Can only eat smaller organisms
-        if my_traits['size'] <= other_traits['size']:
+        dist = self.distance_to(other)
+
+        # Ranged attack
+        if dist > my_traits['size'] and self.can_attack_ranged(other):
+            # Stealth reduces chance of being detected/hit
+            hit_chance = 0.3 * (1 - other_traits['stealth'])
+            if random.random() < hit_chance and my_traits['ranged_power'] > other_traits['size'] * 0.7:
+                other.alive = False
+                self.kills += 1
+                return True
             return False
 
-        # Attack succeeds if power > their size (power is composed trait)
-        if my_traits['power'] > other_traits['size']:
-            other.alive = False
-            self.kills += 1
-            return True
+        # Melee attack (close range)
+        if dist <= my_traits['size']:
+            # Can only eat smaller organisms in melee
+            if my_traits['size'] <= other_traits['size']:
+                return False
+
+            if my_traits['melee_power'] > other_traits['size']:
+                other.alive = False
+                self.kills += 1
+                return True
+
         return False

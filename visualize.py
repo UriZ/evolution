@@ -17,17 +17,47 @@ def fitness_fn(organism):
         organism.fitness = 100 + organism.kills * 50
 
 def draw_organism(screen, org):
-    """Draw organism with jointed tentacles and eyes"""
+    """Draw organism with shape, tentacles, eyes, and special abilities"""
     import math
     if not org.alive:
         return
 
     traits = org.decode_traits()
-    color = (traits['r'], traits['g'], traits['b'])
+
+    # Apply flashing color effect (dramatic pulse)
+    if traits['flash_rate'] > 1:
+        flash = (math.sin(org.animation_time * traits['flash_rate'] * 0.05) + 1) / 2  # 0 to 1
+        # Alternate between base color and inverted/bright color
+        color = (
+            int(traits['r'] * (0.3 + flash * 0.7)),
+            int(traits['g'] * (0.3 + flash * 0.7)),
+            int(traits['b'] * (0.3 + flash * 0.7))
+        )
+    else:
+        color = (traits['r'], traits['g'], traits['b'])
+
     radius = int(traits['size'] / 2)
     x, y = int(org.x), int(org.y)
 
-    # Draw jointed tentacles with animated movement
+    # Draw fire breath (if organism has fire power)
+    if traits['fire_power'] > 5:
+        fire_dist = int(traits['fire_power'])
+        fire_color = (255, min(200, int(traits['fire_power'] * 4)), 0)
+        breath_angle = math.sin(org.animation_time * 0.2) * math.pi / 4
+        end_x = x + int(math.cos(breath_angle) * fire_dist)
+        end_y = y + int(math.sin(breath_angle) * fire_dist)
+        pygame.draw.line(screen, fire_color, (x, y), (end_x, end_y), 3)
+
+
+    # Draw tongue lash
+    if traits['tongue_length'] > 5:
+        tongue_angle = math.sin(org.animation_time * 0.3) * math.pi
+        tongue_len = int(traits['tongue_length'])
+        end_x = x + int(math.cos(tongue_angle) * tongue_len)
+        end_y = y + int(math.sin(tongue_angle) * tongue_len)
+        pygame.draw.line(screen, (255, 100, 150), (x, y), (end_x, end_y), 2)
+
+    # Draw tentacles
     count = traits['tentacle_count']
     length = traits['tentacle_length']
     joints = traits['tentacle_joints']
@@ -40,19 +70,41 @@ def draw_organism(screen, org):
             cumulative_angle = base_angle
 
             for j in range(joints):
-                # Animated wave motion - each joint contributes to the wave
                 wave = math.sin(org.animation_time * 0.1 + i * 0.5 + j * 0.7) * 0.5
                 bend = math.cos(org.animation_time * 0.08 + i) * 0.3
                 cumulative_angle += wave + bend
 
                 next_x = curr_x + math.cos(cumulative_angle) * segment_length
                 next_y = curr_y + math.sin(cumulative_angle) * segment_length
-                thickness = max(1, 4 - j // 2)  # Gradual taper
+                thickness = max(1, 4 - j // 2)
                 pygame.draw.line(screen, color, (int(curr_x), int(curr_y)), (int(next_x), int(next_y)), thickness)
                 curr_x, curr_y = next_x, next_y
 
-    # Draw body
-    pygame.draw.circle(screen, color, (x, y), radius)
+    # Draw body shape
+    shape = traits['shape']
+    if shape == 0:  # Circle
+        pygame.draw.circle(screen, color, (x, y), radius)
+    elif shape == 1:  # Square
+        rect = pygame.Rect(x - radius, y - radius, radius * 2, radius * 2)
+        pygame.draw.rect(screen, color, rect)
+    elif shape == 2:  # Triangle
+        points = [
+            (x, y - radius),
+            (x - radius, y + radius),
+            (x + radius, y + radius)
+        ]
+        pygame.draw.polygon(screen, color, points)
+    elif shape == 3:  # Pentagon
+        points = [(x + radius * math.cos(i * 2 * math.pi / 5 - math.pi/2),
+                   y + radius * math.sin(i * 2 * math.pi / 5 - math.pi/2)) for i in range(5)]
+        pygame.draw.polygon(screen, color, points)
+    else:  # Star
+        points = []
+        for i in range(10):
+            r = radius if i % 2 == 0 else radius // 2
+            angle = i * math.pi / 5 - math.pi/2
+            points.append((x + r * math.cos(angle), y + r * math.sin(angle)))
+        pygame.draw.polygon(screen, color, points)
 
     # Draw eyes
     eye_count = traits['eye_count']
@@ -64,10 +116,16 @@ def draw_organism(screen, org):
             angle = i * eye_angle_step
             eye_x = x + int(math.cos(angle) * eye_distance)
             eye_y = y + int(math.sin(angle) * eye_distance)
-            # White outer eye
             pygame.draw.circle(screen, (255, 255, 255), (eye_x, eye_y), eye_size)
-            # Black pupil
             pygame.draw.circle(screen, (0, 0, 0), (eye_x, eye_y), max(1, eye_size // 2))
+
+    # Draw telekinesis aura (if powerful)
+    if traits['telekinesis'] > 20:
+        aura_radius = int(radius + traits['telekinesis'] * 0.3)
+        alpha_surface = pygame.Surface((aura_radius * 2, aura_radius * 2), pygame.SRCALPHA)
+        aura_color = (*color, 30)
+        pygame.draw.circle(alpha_surface, aura_color, (aura_radius, aura_radius), aura_radius)
+        screen.blit(alpha_surface, (x - aura_radius, y - aura_radius))
 
 def draw_population(screen, pop):
     """Draw all organisms at their positions"""
@@ -114,7 +172,7 @@ def main():
             # Evolve after simulation period
             if step >= STEPS_PER_GEN:
                 pop.evaluate(fitness_fn)
-                pop.evolve(mutation_rate=0.1)
+                pop.evolve(mutation_rate=0.1, trait_gen_interval=5)  # Generate traits every 5 gens for testing
                 step = 0
 
         screen.fill((40, 40, 40))

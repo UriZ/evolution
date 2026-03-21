@@ -4,27 +4,47 @@ import math
 
 # Atomic traits - directly from genes
 ATOMIC_TRAITS = {
+    # Body
     'size': (0, lambda g: 10 + g * 30),
-    'r': (1, lambda g: int(g * 255)),
-    'g': (2, lambda g: int(g * 255)),
-    'b': (3, lambda g: int(g * 255)),
-    'tentacle_count': (4, lambda g: int(g * 16)),
-    'tentacle_length': (5, lambda g: 5 + g * 35),
-    'tentacle_joints': (6, lambda g: int(g * 6) + 2),
-    'speed': (7, lambda g: g * 3),
-    'vision_base': (8, lambda g: 20 + g * 180),
-    'aggression': (9, lambda g: g),
-    'power_base': (10, lambda g: 10 + g * 40),
-    'eye_count': (11, lambda g: int(g * 8) + 1),
-    'eye_size': (12, lambda g: 2 + g * 8),
+    'shape': (1, lambda g: int(g * 5)),  # 0=circle, 1=square, 2=triangle, 3=pentagon, 4=star
+    'r': (2, lambda g: int(g * 255)),
+    'g': (3, lambda g: int(g * 255)),
+    'b': (4, lambda g: int(g * 255)),
+
+    # Tentacles
+    'tentacle_count': (5, lambda g: int(g * 16)),
+    'tentacle_length': (6, lambda g: 5 + g * 35),
+    'tentacle_joints': (7, lambda g: int(g * 6) + 2),
+
+    # Movement & Senses
+    'speed': (8, lambda g: g * 5),  # 0-5 pixels/step
+    'vision_base': (9, lambda g: 20 + g * 180),
+    'aggression': (10, lambda g: g),
+    'power_base': (11, lambda g: 10 + g * 40),
+
+    # Eyes
+    'eye_count': (12, lambda g: int(g * 8) + 1),
+    'eye_size': (13, lambda g: 2 + g * 8),
+
+    # Special abilities
+    'camouflage': (14, lambda g: g),  # 0-1: ability to match background
+    'laser_power': (15, lambda g: g * 50),  # 0-50: ranged attack damage
+    'flash_rate': (16, lambda g: g * 10),  # 0-10: color flashing speed
+    'tongue_length': (17, lambda g: g * 40),  # 0-40: lashing tongue reach
+    'fire_power': (18, lambda g: g * 30),  # 0-30: fire breath damage
+    'telekinesis': (19, lambda g: g * 100),  # 0-100: force projection range
 }
 
 # Composed traits - calculated from other traits
 COMPOSED_TRAITS = {
     'tentacle_weapon': lambda t: t['tentacle_count'] * t['tentacle_length'] * t['tentacle_joints'] * 0.1,
-    'power': lambda t: t['power_base'] + t['tentacle_weapon'],
+    'melee_power': lambda t: t['power_base'] + t['tentacle_weapon'] + t['tongue_length'] * 0.5,
+    'ranged_power': lambda t: t['laser_power'] + t['fire_power'] + t['telekinesis'] * 0.2,
+    'power': lambda t: t['melee_power'] + t['ranged_power'],
     'eye_effectiveness': lambda t: t['eye_count'] * t['eye_size'],
     'vision': lambda t: t['vision_base'] * (1 + t['eye_effectiveness'] * 0.01),
+    'stealth': lambda t: t['camouflage'] * (1 - t['flash_rate'] * 0.05),  # Flashing reduces stealth
+    'intimidation': lambda t: t['flash_rate'] * t['size'] * 0.1,  # Flashing + size = scary
 }
 
 def get_dna_length():
