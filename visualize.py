@@ -150,6 +150,63 @@ def draw_organism(screen, org):
         pygame.draw.circle(alpha_surface, aura_color, (aura_radius, aura_radius), aura_radius, 3)
         screen.blit(alpha_surface, (x - aura_radius, y - aura_radius))
 
+def draw_petri_dish(screen, center_x, center_y, radius):
+    """Draw realistic petri dish with enhanced UI"""
+    import math
+
+    # Drop shadow for depth
+    shadow_surface = pygame.Surface((radius * 2 + 40, radius * 2 + 40), pygame.SRCALPHA)
+    for i in range(8):
+        shadow_alpha = 15 - i * 2
+        pygame.draw.circle(shadow_surface, (0, 0, 0, shadow_alpha),
+                          (radius + 20, radius + 20), radius + 8 - i)
+    screen.blit(shadow_surface, (center_x - radius - 20, center_y - radius - 20))
+
+    # Agar nutrient medium with texture
+    agar_base = (242, 237, 215)
+    pygame.draw.circle(screen, agar_base, (center_x, center_y), radius)
+
+    # Agar texture variation (slightly mottled appearance)
+    texture_surface = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
+    for i in range(50):
+        import random
+        angle = random.random() * 2 * math.pi
+        dist = random.random() * radius * 0.9
+        x = int(radius + math.cos(angle) * dist)
+        y = int(radius + math.sin(angle) * dist)
+        size = random.randint(2, 5)
+        alpha = random.randint(3, 8)
+        pygame.draw.circle(texture_surface, (230, 225, 200, alpha), (x, y), size)
+    screen.blit(texture_surface, (center_x - radius, center_y - radius))
+
+    # Grid marks for measurement (subtle)
+    grid_surface = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
+    for i in range(4):
+        # Horizontal
+        y_pos = radius + (i - 1.5) * radius // 2
+        pygame.draw.line(grid_surface, (200, 195, 180, 30), (0, y_pos), (radius * 2, y_pos), 1)
+        # Vertical
+        x_pos = radius + (i - 1.5) * radius // 2
+        pygame.draw.line(grid_surface, (200, 195, 180, 30), (x_pos, 0), (x_pos, radius * 2), 1)
+    screen.blit(grid_surface, (center_x - radius, center_y - radius))
+
+    # Glass dish rim with depth
+    pygame.draw.circle(screen, (120, 120, 125), (center_x, center_y), radius + 8, 3)
+    pygame.draw.circle(screen, (90, 90, 95), (center_x, center_y), radius + 4, 2)
+    pygame.draw.circle(screen, (70, 70, 75), (center_x, center_y), radius, 4)
+
+    # Inner glass edge highlight
+    pygame.draw.circle(screen, (180, 180, 185), (center_x, center_y), radius - 2, 1)
+
+    # Glass reflection/shine
+    reflection_surface = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
+    for i in range(6):
+        alpha = 50 - i * 7
+        pygame.draw.arc(reflection_surface, (255, 255, 255, alpha),
+                       (-15, -15, radius * 2 + 30, radius * 2 + 30),
+                       3.2, 6.0, 8 - i)
+    screen.blit(reflection_surface, (center_x - radius, center_y - radius))
+
 def draw_population(screen, pop):
     """Draw all organisms at their positions"""
     for org in pop.organisms:
@@ -198,7 +255,11 @@ def main():
                 pop.evolve(mutation_rate=0.1, trait_gen_interval=5)  # Generate traits every 5 gens for testing
                 step = 0
 
-        screen.fill((40, 40, 40))
+        screen.fill((35, 35, 38))  # Lab table background
+        
+        # Draw petri dish
+        draw_petri_dish(screen, pop.world.center_x, pop.world.center_y, pop.world.radius)
+        
         draw_population(screen, pop)
         draw_stats(screen, font, pop.stats(), step)
         pygame.display.flip()
