@@ -2,18 +2,16 @@ import random
 from genetics import random_dna, reproduce
 from organism import Organism
 from traits import get_dna_length, generate_random_trait, add_composed_trait, get_all_trait_names
+from world import PetriDish
 
 class Population:
     def __init__(self, size=100, world_w=800, world_h=600):
-        self.world_w = world_w
-        self.world_h = world_h
+        self.world = PetriDish(world_w, world_h)
         dna_length = get_dna_length()
-        self.organisms = [
-            Organism(random_dna(dna_length),
-                     random.randint(0, world_w),
-                     random.randint(0, world_h))
-            for _ in range(size)
-        ]
+        self.organisms = []
+        for _ in range(size):
+            x, y = self.world.random_position()
+            self.organisms.append(Organism(random_dna(dna_length), x, y))
         self.generation = 0
         self.initial_size = size
         self.fitness_history = []
@@ -52,8 +50,7 @@ class Population:
                 org.y += random.uniform(-traits['speed'], traits['speed'])
 
             # Keep in bounds
-            org.x = max(0, min(self.world_w, org.x))
-            org.y = max(0, min(self.world_h, org.y))
+            self.world.enforce_bounds(org)
 
     def evaluate(self, fitness_fn):
         """Evaluate fitness for all organisms"""
@@ -116,11 +113,8 @@ class Population:
             parent1 = self.select_parent()
             parent2 = self.select_parent()
             child_dna = reproduce(parent1.dna, parent2.dna, mutation_rate)
-            new_organisms.append(
-                Organism(child_dna,
-                         random.randint(0, self.world_w),
-                         random.randint(0, self.world_h))
-            )
+            x, y = self.world.random_position()
+            new_organisms.append(Organism(child_dna, x, y))
 
         self.organisms = new_organisms
         self.generation += 1
